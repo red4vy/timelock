@@ -1,0 +1,23 @@
+[package]
+name = "timelock"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+no-entrypoint = []
+
+[dependencies]
+solana-account-info = "3.1.1"
+solana-program-entrypoint = "3.1.1"
+solana-program-error = "3.0.1"
+solana-pubkey = "4.2.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[lints.rust.unexpected_cfgs]
+level = "warn"
+check-cfg = [
+    'cfg(target_os, values("solana"))',
+    'cfg(feature, values("custom-heap", "custom-panic"))',
+]
