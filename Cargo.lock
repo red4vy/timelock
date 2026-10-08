@@ -346,6 +346,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "solana-program-pack"
+version = "3.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d7701cb15b90667ae1c89ef4ac35a59c61e66ce58ddee13d729472af7f41d59"
+dependencies = [
+ "solana-program-error",
+]
+
+[[package]]
 name = "solana-pubkey"
 version = "4.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -415,6 +424,7 @@ dependencies = [
  "solana-account-info",
  "solana-program-entrypoint",
  "solana-program-error",
+ "solana-program-pack",
  "solana-pubkey",
 ]
 
