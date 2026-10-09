@@ -322,6 +322,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "solana-clock"
+version = "4.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "178fc0c31655aa16190cc112919dcdf279437e14b2f2f9790fe1ec29157ff20c"
+dependencies = [
+ "solana-get-sysvar",
+ "solana-sdk-ids",
+ "solana-sdk-macro",
+ "solana-sysvar-id",
+]
+
+[[package]]
 name = "solana-define-syscall"
 version = "4.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -492,6 +504,7 @@ version = "0.1.0"
 dependencies = [
  "arrayref",
  "solana-account-info",
+ "solana-clock",
  "solana-program-entrypoint",
  "solana-program-error",
  "solana-program-pack",
