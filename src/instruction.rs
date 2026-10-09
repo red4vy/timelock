@@ -10,6 +10,12 @@ pub enum TimelockInstruction {
         amount: u64,
         unlock_timestamp: i64,
     },
+
+    /// Accounts expected by this instruction:
+    ///
+    ///   0. `[writable, signer]` Authority.
+    ///   1. `[writable]` Vault.
+    Withdraw,
 }
 impl TimelockInstruction {
     pub fn unpack(input: &[u8]) -> Result<Self, ProgramError> {
@@ -25,6 +31,7 @@ impl TimelockInstruction {
                     unlock_timestamp,
                 }
             }
+            1 => Self::Withdraw,
             _ => return Err(ProgramError::InvalidInstructionData),
         })
     }

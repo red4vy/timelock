@@ -71,6 +71,9 @@ impl Processor {
             } => {
                 Self::process_initialize_vault(accounts, amount, unlock_timestamp)
             },
+            TimelockInstruction::Withdraw => {
+                todo!()
+            },
         }
     }
 
