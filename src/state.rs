@@ -1,7 +1,7 @@
 use {
     arrayref::{array_mut_ref, array_ref, array_refs, mut_array_refs},
     solana_program_error::ProgramError,
-    solana_program_pack::{Pack, Sealed},
+    solana_program_pack::{IsInitialized, Pack, Sealed},
     solana_pubkey::Pubkey,
 };
 
@@ -12,6 +12,13 @@ pub struct Vault {
     pub unlock_timestamp: i64,
 }
 impl Sealed for Vault {}
+impl IsInitialized for Vault {
+    fn is_initialized(&self) -> bool {
+        self.authority != Pubkey::default()
+            || self.amount != 0
+            || self.unlock_timestamp != 0
+    }
+}
 impl Pack for Vault {
     const LEN: usize = 48;
     fn unpack_from_slice(src: &[u8]) -> Result<Self, ProgramError> {
