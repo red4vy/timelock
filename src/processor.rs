@@ -1,5 +1,6 @@
 use {
     crate::{
+        error::TimelockError,
         instruction::TimelockInstruction,
         state::Vault,
     },
@@ -9,6 +10,7 @@ use {
     solana_program_pack::{IsInitialized, Pack},
     solana_pubkey::Pubkey,
     solana_rent::{Rent, sysvar::GetSysvar},
+    solana_sdk_ids::system_program,
 };
 
 pub struct Processor {}
@@ -59,6 +61,35 @@ impl Processor {
         Vault::pack(vault, &mut vault_info.data.borrow_mut())?;
         Ok(())
     }
+    pub fn process_withdraw(
+        accounts: &[AccountInfo],
+    ) -> ProgramResult {
+        let account_info_iter = &mut accounts.iter();
+        let authority_info = next_account_info(account_info_iter)?;
+        let vault_info = next_account_info(account_info_iter)?;
+
+        Self::check_signer(authority_info)?;
+
+        let vault = Vault::unpack(&vault_info.data.borrow())?;
+
+        if vault.authority != *authority_info.key {
+            return Err(ProgramError::IncorrectAuthority);
+        }
+        if vault.unlock_timestamp > Clock::get()?.unix_timestamp {
+            return Err(TimelockError::NotUnlockedYet.into());
+        }
+
+        let lamports = vault_info.lamports();
+        **vault_info.try_borrow_mut_lamports()? = 0;
+        **authority_info.try_borrow_mut_lamports()? = authority_info
+            .lamports()
+            .checked_add(lamports)
+            .ok_or(ProgramError::ArithmeticOverflow)?;
+
+        vault_info.assign(&system_program::id());
+        vault_info.resize(0)?;
+        Ok(())
+    }
     pub fn process(
         _program_id: &Pubkey,
         accounts: &[AccountInfo],
@@ -72,7 +103,7 @@ impl Processor {
                 Self::process_initialize_vault(accounts, amount, unlock_timestamp)
             },
             TimelockInstruction::Withdraw => {
-                todo!()
+                Self::process_withdraw(accounts)
             },
         }
     }
