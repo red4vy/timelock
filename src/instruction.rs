@@ -2,6 +2,10 @@ use solana_program_error::ProgramError;
 
 #[repr(u8)]
 pub enum TimelockInstruction {
+    /// Accounts expected by this instruction:
+    ///
+    ///   0. `[writable, signer]` Authority.
+    ///   1. `[writable]` Vault.
     InitializeVault {
         amount: u64,
         unlock_timestamp: i64,
