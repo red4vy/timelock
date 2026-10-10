@@ -2942,6 +2942,7 @@ dependencies = [
  "solana-account",
  "solana-account-info",
  "solana-clock 4.0.0",
+ "solana-instruction 4.0.0",
  "solana-program-entrypoint",
  "solana-program-error",
  "solana-program-pack",

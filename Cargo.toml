@@ -10,6 +10,7 @@ no-entrypoint = []
 arrayref = "0.3.9"
 solana-account-info = "3.1.1"
 solana-clock = { version = "4.0.0", features = ["sysvar"] }
+solana-instruction = "4.0.0"
 solana-program-entrypoint = "3.1.1"
 solana-program-error = "3.0.1"
 solana-program-pack = "3.1.0"
