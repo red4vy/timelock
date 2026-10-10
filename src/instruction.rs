@@ -2,6 +2,7 @@ use {
     solana_instruction::{AccountMeta, Instruction},
     solana_program_error::ProgramError,
     solana_pubkey::Pubkey,
+    solana_sdk_ids::system_program,
     std::mem::size_of,
 };
 
@@ -11,6 +12,7 @@ pub enum TimelockInstruction {
     ///
     ///   0. `[writable, signer]` Authority.
     ///   1. `[writable]` Vault.
+    ///   2. `[]` System program.
     InitializeVault {
         amount: u64,
         unlock_timestamp: i64,
@@ -101,6 +103,7 @@ pub fn initialize_vault(
     let accounts = vec![
         AccountMeta::new(*authority_pubkey, true),
         AccountMeta::new(*vault_pubkey, false),
+        AccountMeta::new_readonly(system_program::id(), false),
     ];
 
     Instruction {
