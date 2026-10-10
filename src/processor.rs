@@ -71,7 +71,6 @@ impl Processor {
         Self::check_signer(authority_info)?;
 
         let vault = Vault::unpack(&vault_info.data.borrow())?;
-
         if vault.authority != *authority_info.key {
             return Err(ProgramError::IncorrectAuthority);
         }
