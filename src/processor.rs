@@ -6,11 +6,13 @@ use {
     },
     solana_account_info::{next_account_info, AccountInfo},
     solana_clock::Clock,
+    solana_cpi::invoke,
     solana_program_error::{ProgramError, ProgramResult},
     solana_program_pack::{IsInitialized, Pack},
     solana_pubkey::Pubkey,
     solana_rent::{Rent, sysvar::GetSysvar},
     solana_sdk_ids::system_program,
+    solana_system_interface::instruction,
 };
 
 pub struct Processor {}
@@ -45,14 +47,10 @@ impl Processor {
             return Err(ProgramError::InvalidArgument);
         }
 
-        let mut authority_lamports = authority_info.try_borrow_mut_lamports()?;
-        let mut vault_lamports = vault_info.try_borrow_mut_lamports()?;
-        **authority_lamports = authority_lamports
-            .checked_sub(amount)
-            .ok_or(ProgramError::InsufficientFunds)?;
-        **vault_lamports = vault_lamports
-            .checked_add(amount)
-            .ok_or(ProgramError::ArithmeticOverflow)?;
+        invoke(
+            &instruction::transfer(&authority_info.key, &vault_info.key, amount),
+            &[authority_info.clone(), vault_info.clone()],
+        )?;
 
         vault.authority = *authority_info.key;
         vault.amount = amount;
