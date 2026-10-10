@@ -85,6 +85,7 @@ impl TimelockInstruction {
     }
 }
 
+/// Creates an `InitializeVault` instruction.
 pub fn initialize_vault(
     timelock_program: &Pubkey,
     vault_pubkey: &Pubkey,
@@ -97,6 +98,25 @@ pub fn initialize_vault(
         unlock_timestamp,
     }
     .pack();
+    let accounts = vec![
+        AccountMeta::new(*vault_pubkey, false),
+        AccountMeta::new(*authority_pubkey, true),
+    ];
+
+    Instruction {
+        program_id: *timelock_program,
+        accounts,
+        data,
+    }
+}
+
+/// Creates a `Withdraw` instruction.
+pub fn withdraw(
+    timelock_program: &Pubkey,
+    vault_pubkey: &Pubkey,
+    authority_pubkey: &Pubkey,
+) -> Instruction {
+    let data = TimelockInstruction::Withdraw.pack();
     let accounts = vec![
         AccountMeta::new(*vault_pubkey, false),
         AccountMeta::new(*authority_pubkey, true),
