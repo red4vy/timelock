@@ -1,5 +1,7 @@
 use {
+    solana_instruction::{AccountMeta, Instruction},
     solana_program_error::ProgramError,
+    solana_pubkey::Pubkey,
     std::mem::size_of,
 };
 
@@ -80,5 +82,29 @@ impl TimelockInstruction {
         } else {
             Err(ProgramError::InvalidInstructionData)
         }
+    }
+}
+
+pub fn initialize_vault(
+    timelock_program: &Pubkey,
+    vault_pubkey: &Pubkey,
+    authority_pubkey: &Pubkey,
+    amount: u64,
+    unlock_timestamp: i64,
+) -> Instruction {
+    let data = TimelockInstruction::InitializeVault {
+        amount,
+        unlock_timestamp,
+    }
+    .pack();
+    let accounts = vec![
+        AccountMeta::new(*vault_pubkey, false),
+        AccountMeta::new(*authority_pubkey, true),
+    ];
+
+    Instruction {
+        program_id: *timelock_program,
+        accounts,
+        data,
     }
 }
