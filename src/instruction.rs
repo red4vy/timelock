@@ -1,6 +1,9 @@
-use solana_program_error::ProgramError;
+use {
+    solana_program_error::ProgramError,
+    std::mem::size_of,
+};
 
-#[repr(u8)]
+#[repr(C, u8)]
 pub enum TimelockInstruction {
     /// Accounts expected by this instruction:
     ///
@@ -34,6 +37,21 @@ impl TimelockInstruction {
             1 => Self::Withdraw,
             _ => return Err(ProgramError::InvalidInstructionData),
         })
+    }
+    pub fn pack(&self) -> Vec<u8> {
+        let mut buf = Vec::with_capacity(size_of::<Self>());
+        match self {
+            Self::InitializeVault {
+                amount,
+                unlock_timestamp,
+            } => {
+                buf.push(0);
+                buf.extend_from_slice(&amount.to_le_bytes());
+                buf.extend_from_slice(&unlock_timestamp.to_le_bytes());
+            }
+            Self::Withdraw => buf.push(1),
+        }
+        buf
     }
 
     // Helpers
