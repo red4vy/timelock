@@ -99,8 +99,8 @@ pub fn initialize_vault(
     }
     .pack();
     let accounts = vec![
-        AccountMeta::new(*vault_pubkey, false),
         AccountMeta::new(*authority_pubkey, true),
+        AccountMeta::new(*vault_pubkey, false),
     ];
 
     Instruction {
@@ -118,8 +118,8 @@ pub fn withdraw(
 ) -> Instruction {
     let data = TimelockInstruction::Withdraw.pack();
     let accounts = vec![
-        AccountMeta::new(*vault_pubkey, false),
         AccountMeta::new(*authority_pubkey, true),
+        AccountMeta::new(*vault_pubkey, false),
     ];
 
     Instruction {
