@@ -6,6 +6,7 @@ use {
 };
 
 #[repr(C)]
+#[derive(Debug, PartialEq)]
 pub struct Vault {
     pub authority: Pubkey,
     pub amount: u64,
@@ -40,5 +41,33 @@ impl Pack for Vault {
         authority.copy_from_slice(self.authority.as_ref());
         *amount = self.amount.to_le_bytes();
         *unlock_timestamp = self.unlock_timestamp.to_le_bytes();
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_vault_packing() {
+        let src: [u8; 48] = [0; 48];
+        let mut vault = Vault::unpack_from_slice(&src).unwrap();
+        assert!(!vault.is_initialized());
+
+        vault.authority = Pubkey::new_from_array([1u8; 32]);
+        vault.amount = 200;
+        vault.unlock_timestamp = 2_000_000_000;
+
+        let mut expect: [u8; 48] = [0; 48];
+        expect[0..32].copy_from_slice(&[1u8; 32]);
+        expect[32..40].copy_from_slice(&200u64.to_le_bytes());
+        expect[40..48].copy_from_slice(&2_000_000_000i64.to_le_bytes());
+
+        let mut packed: [u8; 48] = [0; 48];
+        Vault::pack_into_slice(&vault, &mut packed);
+        assert_eq!(packed, expect);
+
+        let unpacked = Vault::unpack_from_slice(&packed).unwrap();
+        assert_eq!(unpacked, vault);
     }
 }
