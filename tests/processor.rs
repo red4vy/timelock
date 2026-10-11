@@ -9,7 +9,8 @@ use {
     solana_sdk_ids::system_program,
     solana_system_interface::error::SystemError,
     timelock::{
-        instruction::initialize_vault,
+        error::TimelockError,
+        instruction::{initialize_vault, withdraw},
         state::Vault,
     },
 };
@@ -60,7 +61,8 @@ fn test_initialize_vault() {
     let mut vault_account = Account::new(0, Vault::get_packed_len(), &program_id);
     let (_, mut system_program_account) = program::keyed_account_for_system_program();
 
-    let mut instruction = initialize_vault(&program_id, &authority_key, &vault_key, 1, 2_000_000_000);
+    let mut instruction =
+        initialize_vault(&program_id, &authority_key, &vault_key, 1, 2_000_000_000);
     instruction.accounts[0].is_signer = false;
 
     // authority does not sign
@@ -156,6 +158,128 @@ fn test_initialize_vault() {
             initialize_vault(&program_id, &authority_key, &vault_key, 1, 2_000_000_000),
             vec![&mut authority_account, &mut vault_account, &mut system_program_account],
             &[Check::err(ProgramError::AccountAlreadyInitialized)],
+        ),
+    );
+}
+
+#[test]
+fn test_withdraw() {
+    let mut mollusk = Mollusk::new(&timelock::id(), "timelock");
+    mollusk.sysvars.clock.unix_timestamp = 1_700_000_000;
+
+    let program_id = timelock::id();
+    let authority_key = Pubkey::new_unique();
+    let mut authority_account = Account::new(70, 0, &system_program::id());
+    let vault_key = Pubkey::new_unique();
+    let mut vault_account =
+        Account::new(vault_minimum_balance(), Vault::get_packed_len(), &program_id);
+    let (_, mut system_program_account) = program::keyed_account_for_system_program();
+
+    assert_eq!(
+        Err(ProgramError::UninitializedAccount),
+        do_process_instruction(
+            &mut mollusk,
+            withdraw(&program_id, &authority_key, &vault_key),
+            vec![&mut authority_account, &mut vault_account],
+            &[Check::err(ProgramError::UninitializedAccount)],
+        ),
+    );
+
+    do_process_instruction(
+        &mut mollusk,
+        initialize_vault(&program_id, &authority_key, &vault_key, 50, 2_000_000_000),
+        vec![&mut authority_account, &mut vault_account, &mut system_program_account],
+        &[Check::success()],
+    )
+    .unwrap();
+
+    let authority2_key = Pubkey::new_unique();
+    let mut authority2_account = Account::new(70, 0, &system_program::id());
+
+    // authority.key != vault.authority
+    mollusk.sysvars.clock.unix_timestamp = 2_100_000_000;
+    assert_eq!(
+        Err(ProgramError::IncorrectAuthority),
+        do_process_instruction(
+            &mut mollusk,
+            withdraw(&program_id, &authority2_key, &vault_key),
+            vec![&mut authority2_account, &mut vault_account],
+            &[Check::err(ProgramError::IncorrectAuthority)],
+        ),
+    );
+
+    let mut instruction = withdraw(&program_id, &authority_key, &vault_key);
+    instruction.accounts[0].is_signer = false;
+
+    assert_eq!(
+        Err(ProgramError::MissingRequiredSignature),
+        do_process_instruction(
+            &mut mollusk,
+            instruction,
+            vec![&mut authority_account, &mut vault_account],
+            &[Check::err(ProgramError::MissingRequiredSignature)],
+        ),
+    );
+
+    // unlock_timestamp > current_timestamp
+    mollusk.sysvars.clock.unix_timestamp = 1_999_999_999;
+    assert_eq!(
+        Err(TimelockError::NotUnlockedYet.into()),
+        do_process_instruction(
+            &mut mollusk,
+            withdraw(&program_id, &authority_key, &vault_key),
+            vec![&mut authority_account, &mut vault_account],
+            &[Check::err(TimelockError::NotUnlockedYet.into())],
+        ),
+    );
+
+    // unlock_timestamp == current_timestamp
+    mollusk.sysvars.clock.unix_timestamp = 2_000_000_000;
+    assert_eq!(
+        Ok(()),
+        do_process_instruction(
+            &mut mollusk,
+            withdraw(&program_id, &authority_key, &vault_key),
+            vec![&mut authority_account.clone(), &mut vault_account.clone()],
+            &[Check::success()],
+        ),
+    );
+
+    // unlock_timestamp < current_timestamp
+    mollusk.sysvars.clock.unix_timestamp = 2_100_000_000;
+    do_process_instruction(
+        &mut mollusk,
+        withdraw(&program_id, &authority_key, &vault_key),
+        vec![&mut authority_account, &mut vault_account],
+        &[Check::success()],
+    )
+    .unwrap();
+
+    assert_eq!(
+        vault_account.lamports,
+        0,
+    );
+    assert_eq!(
+        vault_account.data.len(),
+        0,
+    );
+    assert_eq!(
+        vault_account.owner,
+        system_program::id(),
+    );
+    assert_eq!(
+        authority_account.lamports,
+        vault_minimum_balance() + 70,
+    );
+
+    // withdraw twice
+    assert_eq!(
+        Err(ProgramError::InvalidAccountData),
+        do_process_instruction(
+            &mut mollusk,
+            withdraw(&program_id, &authority_key, &vault_key),
+            vec![&mut authority_account, &mut vault_account],
+            &[Check::err(ProgramError::InvalidAccountData)],
         ),
     );
 }
