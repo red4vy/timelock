@@ -94,6 +94,17 @@ fn test_initialize_vault() {
         ),
     );
 
+    // unlock_timestamp == current_timestamp
+    assert_eq!(
+        Err(ProgramError::InvalidArgument),
+        do_process_instruction(
+            &mut mollusk,
+            initialize_vault(&program_id, &authority_key, &vault_key, 1, 1_700_000_000),
+            vec![&mut authority_account, &mut vault_account, &mut system_program_account],
+            &[Check::err(ProgramError::InvalidArgument)],
+        ),
+    );
+
     do_process_instruction(
         &mut mollusk,
         initialize_vault(&program_id, &authority_key, &vault_key, 1, 2_000_000_000),
