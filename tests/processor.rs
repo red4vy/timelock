@@ -60,6 +60,20 @@ fn test_initialize_vault() {
     let mut vault_account = Account::new(0, Vault::get_packed_len(), &program_id);
     let (_, mut system_program_account) = program::keyed_account_for_system_program();
 
+    let mut instruction = initialize_vault(&program_id, &authority_key, &vault_key, 1, 2_000_000_000);
+    instruction.accounts[0].is_signer = false;
+
+    // authority does not sign
+    assert_eq!(
+        Err(ProgramError::MissingRequiredSignature),
+        do_process_instruction(
+            &mut mollusk,
+            instruction,
+            vec![&mut authority_account, &mut vault_account, &mut system_program_account],
+            &[Check::err(ProgramError::MissingRequiredSignature)],
+        ),
+    );
+
     // vault is not rent-exempt
     assert_eq!(
         Err(ProgramError::AccountNotRentExempt),
