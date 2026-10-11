@@ -7,6 +7,7 @@ use {
 };
 
 #[repr(C, u8)]
+#[derive(Debug, PartialEq)]
 pub enum TimelockInstruction {
     /// Accounts expected by this instruction:
     ///
@@ -129,5 +130,32 @@ pub fn withdraw(
         program_id: *timelock_program,
         accounts,
         data,
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_instruction_packing() {
+        let check = TimelockInstruction::InitializeVault {
+            amount: 2,
+            unlock_timestamp: 1000,
+        };
+        let packed = check.pack();
+        let mut expect = Vec::from([0u8]);
+        expect.extend_from_slice(&2u64.to_le_bytes());
+        expect.extend_from_slice(&1000i64.to_le_bytes());
+        assert_eq!(packed, expect);
+        let unpacked = TimelockInstruction::unpack(&expect).unwrap();
+        assert_eq!(unpacked, check);
+
+        let check = TimelockInstruction::Withdraw;
+        let packed = check.pack();
+        let expect = Vec::from([1u8]);
+        assert_eq!(packed, expect);
+        let unpacked = TimelockInstruction::unpack(&expect).unwrap();
+        assert_eq!(unpacked, check);
     }
 }
