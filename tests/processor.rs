@@ -7,6 +7,7 @@ use {
     solana_pubkey::Pubkey,
     solana_rent::Rent,
     solana_sdk_ids::system_program,
+    solana_system_interface::error::SystemError,
     timelock::{
         instruction::initialize_vault,
         state::Vault,
@@ -80,6 +81,17 @@ fn test_initialize_vault() {
             initialize_vault(&program_id, &authority_key, &vault_key, 0, 2_000_000_000),
             vec![&mut authority_account, &mut vault_account, &mut system_program_account],
             &[Check::err(ProgramError::InvalidArgument)],
+        ),
+    );
+
+    // amount > authority_account.lamports
+    assert_eq!(
+        Err(SystemError::ResultWithNegativeLamports.into()),
+        do_process_instruction(
+            &mut mollusk,
+            initialize_vault(&program_id, &authority_key, &vault_key, 50, 2_000_000_000),
+            vec![&mut authority_account, &mut vault_account, &mut system_program_account],
+            &[Check::err(SystemError::ResultWithNegativeLamports.into())],
         ),
     );
 
