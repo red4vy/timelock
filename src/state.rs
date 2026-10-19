@@ -16,8 +16,8 @@ impl Sealed for Vault {}
 impl IsInitialized for Vault {
     fn is_initialized(&self) -> bool {
         self.authority != Pubkey::default()
-            || self.amount != 0
-            || self.unlock_timestamp != 0
+            && self.amount != 0
+            && self.unlock_timestamp != 0
     }
 }
 impl Pack for Vault {
